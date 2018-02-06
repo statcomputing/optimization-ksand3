@@ -73,65 +73,239 @@ Let $x_1, \ldots, x_n$ be an i.i.d. sample and $l(\theta)$ the log-likelihood of
 #### Problem 1(b) {-}
 Suppose that the observed sample is 
 ```{r define_x, echo = TRUE, eval=TRUE}
-x <- c(1.77, -0.23, 2.76, 3.80, 3.47, 56.75, -1.34, 4.24, -2.44, 3.29, 3.71, -2.40, 4.53, -0.07, -1.05, -13.87, -2.53, -1.75)
+x_q1 <- c(1.77, -0.23, 2.76, 3.80, 3.47, 56.75, -1.34, 4.24, -2.44, 3.29, 3.71, -2.40, 4.53, -0.07, -1.05, -13.87, -2.53, -1.75)
 ```
-Graph the log-likelihood  function. Find the MLE for $\theta$ using the Newton-Raphson method. Try all the following starting points: ???11, ???1, 0, 1.5, 4, 4.7, 7, 8, and 38.  Compare your results. Is the sample mean a good starting point?
+Graph the log-likelihood  function. Find the MLE for $\theta$ using the Newton-Raphson method. Try all the following starting points: $-11, -1, 0, 1.5, 4, 4.7, 7, 8,$ and $38$.  Compare your results. Is the sample mean a good starting point?
 
 #### Solution 1(b) {-}
 
 
 #### Problem 1(c) {-}
-Apply fixed-point iterations using $G(x) = \alpha l'(\theta) + \theta$, with scaling choices of $\alpha \in \{1, 0.64, 0.25\}$ and initial value ???1. Try the same starting points as above.
+Apply fixed-point iterations using $G(x) = \alpha l'(\theta) + \theta$, with scaling choices of $\alpha \in \{1, 0.64, 0.25\}$ and initial value $-1$. Try the same starting points as above.
 
 #### Solution 1(c) {-}
 
 
 #### Problem 1(d) {-}
-(d) First use Fisher scoring to find the MLE for $\theta$, then refine the estimate by running Newton-Raphson method. Try the same starting points as above.
+First use Fisher scoring to find the MLE for $\theta$, then refine the estimate by running Newton-Raphson method. Try the same starting points as above.
 
 #### Solution 1(d) {-}
 
 
 
 
-```{r sources, echo = TRUE, message = FALSE, warning = FALSE}
-## Some monte_carlo_cdf functions, see the source code for details
-# set.seed(213)
-# source("monte_carlo_function_approx_normal_cdf.R")
-# source("monte_carlo_function_table.R")
+### Problem 2 {-}
+
+Consider the probability density with parameter $\theta$
+\begin{align}
+    p(x;\theta) = \dfrac{1-\cos{(x-\theta)}}{2\pi}, \,\, 0\leq x \leq 2\pi , \,\, \theta \in (-\pi,\pi).
+    (\#eq:probdf2)
+\end{align}
+
+A random sample from the distribution is
+```{r x_values, echo = TRUE, eval=TRUE}
+x_q2 <- c(3.91, 4.85, 2.28, 4.06, 3.70, 4.04, 5.46, 3.53, 2.28, 1.96, 
+       2.53, 3.88, 2.22, 3.47, 4.82, 2.46, 2.99, 2.54, 0.52)
 ```
 
-(ref:Estimation) Comparison of Monte-Carlo estimated value and the actual values of Standard Normal CDF at different values of $t$.
+#### Problem 2(a) {-}
+What is the log-likelihood function of $\theta$ based on the sample? Graph the function between $-\pi$ and $\pi$.
 
-```{r estimation, echo = TRUE}
-# knitr::kable(monte_carlo_table(), booktabs = TRUE,
-#              caption = '(ref:Estimation)')
+#### Solution 2(a) {-}
+The log-likelihood function of $\theta$ based on the given sample can be computed as follows:
+\begin{align}
+    l(\theta) &= \ln{\left[\prod_{i=1}^{n} \left(\dfrac{1-\cos{(x-\theta)}}{2\pi}\right)\right]} \\
+    &= \sum_{i=1}^{n} \left[\ln{\left(\dfrac{1-\cos{(x-\theta)}}{2\pi}\right)}\right] \\
+    &= \sum_{i=1}^{n} \left[\ln{\left(\dfrac{1}{2\pi}\right)} + \ln{\left(1-\cos{(x-\theta)}\right)}\right] \\
+    &= n\ln{\left(\dfrac{1}{2\pi}\right)} + \sum_{i=1}^{n} \left[\ln{\left(1-\cos{(x-\theta)}\right)}\right] \\
+    &= n\ln{\left(1\right)} - n\ln{\left(2\pi\right)} + \sum_{i=1}^{n} \left[\ln{\left(1-\cos{(x-\theta)}\right)}\right] \\
+    &= - n\ln{\left(2\pi\right)} + \sum_{i=1}^{n} \left[\ln{\left(1-\cos{(x-\theta)}\right)}\right].
+    (\#eq:q2aproof)
+\end{align}
+
+The graph of the log-likelihood function of $\theta$ is plotted from $[-\pi,\pi]$ in Figure \@ref(fig:q2a).
+```{r q2a, echo = FALSE, eval=TRUE,fig.cap="\\label{fig.q2a} Log-likelihood function"}
+# Plot the log-likelihood function
+n_value <- length(x_q2)
+all_theta <- seq(-pi,pi,0.0025)
+l_theta_t <- array()
+
+for (j in 1:length(all_theta)){
+  l_theta_t[j] <- -n_value * log(2*pi) + sum(log(1-cos(x_q2-all_theta[j])))
+}
+
+y_name <- expression(paste("l(",theta,")=ln(L(",theta,"))",sep="",collapse=NULL))
+title_name <- expression(paste("Log-likelihood function of ",theta,sep="",collapse=NULL))
+plot(all_theta,l_theta_t,type="l",xlab=expression(theta),ylab = y_name,main = title_name)
 ```
 
+#### Problem 2(b) {-}
+Find the method-of-moments estimator of $\theta$. That is, the estimator $\hat{\theta}_{\text{moment}}$ is value of $\theta$ with
+$\mathbb{E}[X | \theta] = \bar{x}$
+where x is the sample mean. This means you have to first find the expression for $\mathbb{E}[X | \theta]$.
 
-<!-- (ref:cap-Boxplots1) Boxplots to show sample distribution of Monte-Carlo estimator. -->
+#### Solution 2(b) {-}
+To find the method-of-moments estimator of $\theta$, we will  first find the expression for $\mathbb{E}[X | \theta]$, as shown below:
 
-```{r Boxplots1, echo = TRUE, fig.cap = "(ref:cap-Boxplots1)", fig.width = 8}
-## some monte_carlo_cdf functions, see the source code for details
-# set.seed(213)
-# source("monte_carlo_function_100_simulations.R")
-# source("monte_carlo_plot_results.R")
+\begin{align}
+    \mathbb{E}[X | \theta] &= \int_{0}^{2\pi} x p(x;\theta) dx \\
+    &= \dfrac{1}{2\pi}\int_{0}^{2\pi} x (1-\cos{(x-\theta)}) dx \\
+    &= \dfrac{1}{2\pi}\left[\int_{0}^{2\pi} x dx - \int_{0}^{2\pi}x\cos{(x-\theta)} dx\right] \\
+    (\#eq:q2bproof1)
+\end{align}
+
+Using integration by parts, we find that
+
+\begin{align}
+    \mathbb{E}[X | \theta] &= \dfrac{1}{2\pi}\left[\dfrac{x^2}{2} \Big|_{0}^{2\pi} - x\sin{(x-\theta)}\Big|_{0}^{2\pi} + \int_{0}^{2\pi} \sin{(x-\theta)}dx \right] \\
+     &= \left(\dfrac{4\pi^2}{4\pi} - 0\right) - \dfrac{1}{2\pi}\left[2\pi\sin{(2\pi-\theta)}-0\right] - \dfrac{1}{2\pi}\left[ \cos{(x-\theta)} \right]\Big|_{0}^{2\pi} \\
+    &= \pi - \sin{(2\pi - \theta)} - \dfrac{1}{2\pi}\left[\cos{(2\pi-\theta)} - \cos{(0-\theta)} \right] \\
+    &= \pi - \left[\sin{(2\pi)}\cos{(-\theta)}+\cos{(2\pi)}\sin{(-\theta)}\right] \\
+    &- \frac{1}{2\pi}\left[\cos{(2\pi)}\cos{(-\theta)} - \sin{(2\pi)}\sin{(-\theta)}\right] + \frac{1}{2\pi}\left[\cos{(0)}\cos{(-\theta)} - \sin{(0)}\sin{(-\theta)}\right] \\
+    &= \pi - \sin{(-\theta)} - \dfrac{1}{2\pi}\cos{(-\theta)} + \dfrac{1}{2\pi}\cos{(-\theta)} \\
+    &= \pi - \sin{(-\theta)} \\
+    &= \pi - \sin{(\theta)}.
+    (\#eq:q2bproof2)
+\end{align}
+
+Now we set this equal to the sample mean, $\bar{x}$, and we have
+\begin{align}
+    \mathbb{E}[X | \theta] &= \pi - \sin{(\theta)} = \bar{x},
+    (\#eq:q2bproof3)
+\end{align}
+so we subtract $\pi$ from both sides and we have 
+\begin{align}
+    -\sin{(\theta)} &= \bar{x} - \pi.
+    (\#eq:q2bproof4)
+\end{align}
+Finally we multiply by $-1$ and take the inverse sine function of both sides and we find that 
+\begin{align}
+    \theta &= \arcsin{(\pi - \bar{x})}.
+    (\#eq:q2bproof4)
+\end{align}
+Thus, the method-of-moments estimator of $\theta$, denoted $\hat{\theta}_{\text{moment}} = \arcsin{(\pi - \bar{x})}$.
+
+```{r x_mean, echo = FALSE, eval=TRUE}
+x_bar <- mean(x_q2)
+theta_moment <- asin(pi - x_bar)
 ```
 
-Further, the difference between the estimated value and the true value are also calculated for each of the 100 samples and are plotted using box plots to make further inferences. The box plots for bias should be distributed around 0 for unbiased estimators.The box plots for bias of Monte-Carlo simulation estimators of Standard Normal CDF for given values of $t$ and $n$ are visualized in the following figure \@ref(fig:Boxplots2)
+Given the observations, the sample mean of the given random sample is $\bar{x}=$ `r x_bar`.  The method-of-moments estimator of $\theta$ is $\hat{\theta}_{\text{moment}}=$ `r theta_moment`
 
-<!-- (ref:cap-Boxplots2) Boxplots to show sample distribution of Bias. -->
+#### Problem 2(c) {-}
+Find the MLE for $\theta$ using the Newton-Raphson method with $\theta_0 = \hat{\theta}_{\text{moment}}$.
 
-```{r Boxplots2, echo = TRUE, fig.cap = "(ref:cap-Boxplots1)", fig.width = 8}
-## some monte_carlo_cdf functions, see the source code for details
-# source("monte_carlo_bias_box_plot.R")
+#### Solution 2(c) {-}
+```{r q2cd, echo = FALSE, eval=TRUE}
+# Question 2c and 2d
+source('sandberg_assignment_2_MLE_finder_function.R')
+l_prime_theta_t <- function(theta_t){
+  -1 * sum((sin(x_q2 - theta_t)) / (1-cos(x_q2-theta_t)))
+  }
+l_double_prime_theta_t <- function(theta_t){
+  -1 * sum(1 / (1-cos(x_q2-theta_t)))
+  }
+
+begin_theta <- theta_moment
+
+converged_to_theta_tm <- find_MLE(begin_theta, l_prime_theta_t, l_double_prime_theta_t,0.00000001)
+
+begin_theta <- 2.7
+
+converged_to_theta_27 <- find_MLE(begin_theta, l_prime_theta_t, l_double_prime_theta_t,0.00000001)
+
+begin_theta <- -2.7
+
+converged_to_theta_neg27 <- find_MLE(begin_theta, l_prime_theta_t, l_double_prime_theta_t,0.00000001)
+```
+When we start with $\theta_0 = \hat{\theta}_{\text{moment}}=$ `r theta_moment` we find that the MLE for $\theta$ using the Newton-Raphson method is `r converged_to_theta_tm`.  
+
+#### Problem 2(d) {-}
+What solutions do you find when you start at $\theta_0 = -2.7$ and $\theta_0 = 2.7$?
+
+#### Solution 2(d) {-}
+When we start with $\theta_0 = -2.7$ we find that the MLE for $\theta$ using the Newton-Raphson method is `r converged_to_theta_neg27` and when $\theta_0 = 2.7$ the MLE is `r converged_to_theta_27`. 
+
+#### Problem 2(e) {-}
+Repeat the above using 200 equally spaced starting values between $-\pi$ and $\pi$. Partition the values into sets of attraction, That is, divide the set of starting values into separate groups, with each group corresponding to a separate unique outcome of the optimization.
+
+#### Solution 2(e) {-}
+Using 200 equally spaced starting values between $-\pi$ and $\pi$, I found the following unique outcomes and divided the set into groups that are attracted to the same outcome.
+
+(ref:Attracts) The unique outcomes of the optimization using 200 equally spaced starting values between $-\pi$ and $\pi$.  The table lists the lower and upper bounds of values for $\theta$ that are attracted to each unique outcome.
+
+```{r attracts, echo = FALSE, eval = TRUE}
+# Question 2 part e
+theta_200 <- seq(-pi,pi,length.out = 200)
+attraction_outcome <- array()
+
+for (i in 1:length(theta_200)){
+  attraction_outcome[i] <- find_MLE(theta_200[i], l_prime_theta_t, l_double_prime_theta_t,0.00000001)
+}
+
+# Find unique values -- define unique based on rounding of 8 digits
+attractors <- unique(round(attraction_outcome,8))
+
+sets_of_attractors <- cbind(theta_200,attraction_outcome,round(attraction_outcome,8))
+
+# print(attractors)
+
+lowest_theta  <- array()
+highest_theta <- array()
+
+for (m in 1:length(attractors)){
+  one_set_index <- which(sets_of_attractors[,3] == attractors[m])
+  
+  lowest_theta[m] <- min(sets_of_attractors[one_set_index,1])
+  highest_theta[m] <- max(sets_of_attractors[one_set_index,1])
+  
+}
+
+min_max_attract <- cbind(attractors,lowest_theta,highest_theta)
+colnames(min_max_attract) <- c("Attracted to Theta", "Lowest Theta in Set", "Highest Theta in Set")
+
+knitr::kable(min_max_attract, booktabs = TRUE,
+             caption = '(ref:Attracts)')
 ```
 
-### Conclusion and Summary {-}
+### Problem 3 {-}
+The counts of a floor beetle at various time points (in days) are given in a dataset.
+```{r beetle_values, echo = TRUE, eval=TRUE}
+beetles <- data.frame(
+  days = c(0, 8, 28, 41, 63, 69, 97, 117, 135, 154),
+  beetles = c(2, 47, 192, 256, 768, 896, 1120, 896, 1184, 1024))
+```
 
-In summary, we observed that the monte-carlo simulation provides reasonably accurate estimates for the normal cdf function as seen in \@ref(tab:estimation). Further, the bias of the estimator is distributed around zero. It was also observed that, independent of value $t$, as n increases, the spread of bias decreases. If hypothesis testing has to be done to verify unbiasedness of the monte-carlo estimate for all $t$, larger n will ensure that the estimator is unbiased for all values of $t$. 
+A simple model for population growth is the logistic model given by
+\begin{align}
+    \dfrac{\text{d}N}{\text{d}t} &= rN\left(1-\dfrac{N}{K}\right),
+    (\#eq:q3_1)
+\end{align}
+where $N$ is the population size, $t$ is time, $r$ is an unknown growth rate parameter, and $K$ is an unknown parameter that represents the population carrying capacity of the environment.  The solution to the differential equation is given by
+\begin{align}
+    N_t &= f(t) = \dfrac{KN_0}{N_0 + (K-N_0)\exp{(-rt)}}, 
+    (\#eq:q3_2)
+\end{align}
+where $N_t$ denotes the population size at time $t$.  
 
-It can also be inferred, that for extreme $t$ values, even small values of $n$ will ensure unbiased estimates for normal cdf. The bias spread decreases for larger values of $t$ and is so less, even for small $n$.
+#### Problem 3(a) {-}
+Fit the population growth model to the beetles data using the Gauss-Newton approach, to minimize the sum of squared errors between model predictions and observed counts.
+
+#### Solution 3(a) {-}
+
+
+#### Problem 3(b) {-}
+Show the contour plot of the sum of squared errors.
+
+#### Solution 3(b) {-}
+
+
+#### Problem 3(c) {-}
+In many population modeling application, an assumption of lognormality is adopted. That is , we assume that $\log{N_t}$ are independent and normally distributed with mean $\log{f(t)}$ and variance $\sigma^2$. Find the maximum likelihood estimators of $r$, $K$, $\sigma^2$ using any suitable method of your choice. Estimate the variance your parameter estimates.
+
+#### Solution 3(c) {-}
+
+
 
 ### Acknowledgment {-}
 
