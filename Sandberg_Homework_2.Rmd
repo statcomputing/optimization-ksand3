@@ -60,14 +60,82 @@ The Cauchy$(\theta, 1)$ distribution has probability density
 #### Problem 1(a) {-}
 Let $x_1, \ldots, x_n$ be an i.i.d. sample and $l(\theta)$ the log-likelihood of $\theta$ based on the sample.  Show that
 \begin{align}
-    l(\theta)  &= -n\ln{\pi} - \sum_{i=1}^{n} \ln{[1 + (x - \theta)^2]}, \\
-    l'(\theta) &= -2 \sum_{i=1}^{n} \dfrac{\theta - x_i}{1 + (x - \theta)^2}, \\
-    l''(\theta) &= -2 \sum_{i=1}^{n} \dfrac{1 - (\theta - x_i)^2}{[1 + (x - \theta)^2]^2}, \\
+    l(\theta)  &= -n\ln{\pi} - \sum_{i=1}^{n} \ln{[1 + (\theta - x_i)^2]}, \\
+    l'(\theta) &= -2 \sum_{i=1}^{n} \dfrac{\theta - x_i}{1 + (\theta - x_i)^2}, \\
+    l''(\theta) &= -2 \sum_{i=1}^{n} \dfrac{1 - (\theta - x_i)^2}{[1 + (\theta - x_i)^2]^2}, \\
     I(\theta) &= n \int \dfrac{\{p'(x)\}^2}{p(x)}dx = \dfrac{4n}{\pi} \int_{-\infty}^{\infty} \dfrac{x^2 dx}{(1 + x^2)^3} = \dfrac{n}{2}.
     (\#eq:show1a)
 \end{align}
 
 #### Solution 1(a) {-}
+Let $x_1, \ldots, x_n$ be an i.i.d. sample and $l(\theta)$ the log-likelihood of $\theta$ based on the sample.  Observe,
+\begin{align}
+    l(\theta) &= \ln{L(\theta)} \\
+    &= \ln{\left(\prod_{i=1}^{n} \left(\dfrac{1}{\pi[1+(x_i - \theta)^2]} \right) \right)} \\
+    &= \ln{\left(\prod_{i=1}^{n} \left(\pi[1+(x_i - \theta)^2] \right)^{-1} \right)} \\    
+    &= \sum_{i=1}^{n} \ln{\left(\pi[1+(x_i - \theta)^2]\right)^{-1}} \\
+    &= \sum_{i=1}^{n} \left[\ln{(1)} - \ln{\left(\pi[1+(x_i - \theta)^2]\right)} \right] \\
+    &= \sum_{i=1}^{n} \left[0 - \ln{\left(\pi[1+(x_i - \theta)^2]\right)} \right] \\
+    &= \sum_{i=1}^{n} \left[(- \ln{(\pi)}) -\ln{\left(1+(x_i - \theta)^2\right)} \right] \\
+    &= -n\ln{\pi} - \sum_{i=1}^{n} \ln{[1 + (\theta - x_i)^2]}.
+    (\#eq:show1a1)
+\end{align}
+
+Next, we have
+\begin{align}
+    l'(\theta) &= 0 - \sum_{i=1}^{n} \left(\dfrac{1}{1+(\theta - x_i)^2} \right)\left(2(\theta - x_i)(1) \right) \\
+    &= -2 \sum_{i=1}^{n} \dfrac{\theta - x_i}{1 + (\theta - x_i)^2}.
+    (\#eq:show1a2)
+\end{align}
+
+Then for the second derivative we have,
+\begin{align}
+    l''(\theta) &= -2 \sum_{i=1}^{n} \dfrac{[1 + (\theta - x_i)^2](1) - (\theta - x_i)[2(\theta - x_i)(1)]}{[1 + (\theta - x_i)^2]^2} \\
+    &= -2 \sum_{i=1}^{n} \dfrac{1 + (\theta - x_i)^2 - 2(\theta - x_i)^2}{[1 + (\theta - x_i)^2]^2} \\
+    &= -2 \sum_{i=1}^{n} \dfrac{1 - (\theta - x_i)^2}{[1 + (\theta - x_i)^2]^2}.
+    (\#eq:show1a3)
+\end{align}
+
+Lastly, 
+\begin{align}
+I(\theta) &= \mathbb{E}\left[\left(l'(\theta) \right)^2 \right] \\
+  &= \mathbb{E}\left[\left(-2 \sum_{i=1}^{n} \dfrac{\theta - x_i}{1 + (\theta - x_i)^2}\right)^2\right] \\
+  &= 4\mathbb{E}\left[\sum_{i=1}^{n} \dfrac{(\theta - x_i)^2}{[1 + (\theta - x_i)^2]^2}\right] \\
+  &= \dfrac{4n}{\pi} \int \dfrac{(\theta - x)^2}{[1 + (\theta - x)^2]^2} \dfrac{1}{1+(\theta - x)^2} dx \\
+  &= \dfrac{4n}{\pi} \int \dfrac{(\theta - x)^2}{[1 + (\theta - x)^2]^3} dx \\
+  &= \dfrac{4n\pi}{\pi^2} \int \dfrac{(\theta - x)^2}{[1 + (\theta - x)^2]^4}[1 + (\theta - x)^2] dx \\
+  &= \dfrac{4n}{\pi^2} \int \dfrac{(\theta - x)^2}{[1 + (\theta - x)^2]^4}\left(\pi[1 + (\theta - x)^2]\right) dx \\
+  &= n \int \dfrac{\{p'(x)\}^2}{p(x)}dx 
+    (\#eq:show1a4)
+\end{align}
+
+This means, when $u = \theta - x$ and $du=dx$, we have
+\begin{align}
+I(\theta) &= n \int \dfrac{\{p'(x)\}^2}{p(x)}dx \\
+  &= \dfrac{4n}{\pi^2} \int_{-\infty}^{\infty} \dfrac{u^2}{[1 + u^2]^4}\left(\dfrac{1}{\pi[1 + u^2]}\right)^{-1} du \\
+  &= n \int_{-\infty}^{\infty} \dfrac{4\pi u^2(1+u^2)}{\pi^2[1 + u^2]^4}du \\
+  &= \dfrac{4n}{\pi} \int_{-\infty}^{\infty} \dfrac{u^2 du}{(1 + u^2)^3}.
+    (\#eq:show1a4b)
+\end{align}
+
+Thus, if we substitute $u = \tan{(\theta)}$ and $du = sec^2{(\theta)}$, we have
+\begin{align}
+I(\theta) &= \dfrac{4n}{\pi} \int_{-\infty}^{\infty} \dfrac{u^2 du}{(1 + u^2)^3}  \\
+  &= \dfrac{4n}{\pi} \int_{-\frac{\pi}{2}}^{\frac{\pi}{2}} \dfrac{\tan^2{\theta}}{(1+\tan^2{\theta})^3}\sec^2{\theta}d\theta \\
+  &= \dfrac{4n}{\pi} \int_{-\frac{\pi}{2}}^{\frac{\pi}{2}} \dfrac{\tan^2{\theta}}{(\sec^2{\theta})^3}\sec^2{\theta}d\theta \\
+  &= \dfrac{4n}{\pi} \int_{-\frac{\pi}{2}}^{\frac{\pi}{2}} \dfrac{\tan^2{\theta}}{(\sec^2{\theta})^2}d\theta \\
+  &= \dfrac{4n}{\pi} \int_{-\frac{\pi}{2}}^{\frac{\pi}{2}} \dfrac{\sin^2{\theta}}{\cos^2{\theta}}(\cos^2{\theta})^2d\theta \\
+  &= \dfrac{4n}{\pi} \int_{-\frac{\pi}{2}}^{\frac{\pi}{2}} \sin^2{\theta}\cos^2{\theta}d\theta \\
+  &= \dfrac{4n}{\pi} \int_{-\frac{\pi}{2}}^{\frac{\pi}{2}} (1-\cos^2{\theta})\cos^2{\theta}d\theta \\
+  &= \dfrac{4n}{\pi} \left[\int_{-\frac{\pi}{2}}^{\frac{\pi}{2}}\cos^2{\theta}d\theta - \int_{-\frac{\pi}{2}}^{\frac{\pi}{2}}\cos^4{\theta}d\theta \right] \\
+  &= \dfrac{4n}{\pi}\left[\dfrac{1}{2}\theta + \dfrac{1}{4}\sin{2\theta} - \frac{1}{4}\cos^3{\theta}\sin{\theta}\right]\Big|_{-\frac{\pi}{2}}^{\frac{\pi}{2}} - \dfrac{3}{4}\int_{-\frac{\pi}{2}}^{\frac{\pi}{2}}\cos^2{\theta}d\theta \\
+   &= \dfrac{4n}{\pi}\left[\dfrac{1}{2}\theta + \dfrac{1}{4}\sin{2\theta} - \frac{1}{4}\cos^3{\theta}\sin{\theta}\right]\Big|_{-\frac{\pi}{2}}^{\frac{\pi}{2}} - \dfrac{3}{4}\left(\dfrac{1}{2}\theta + \dfrac{1}{4}\sin{2\theta} \right)\Big|_{-\frac{\pi}{2}}^{\frac{\pi}{2}}\cos^2{\theta} \\
+  &= \dfrac{4n}{\pi}\left[\dfrac{1}{4}\left(\dfrac{1}{2}\theta + \dfrac{1}{4}\sin{2\theta}\right) - \dfrac{1}{4}\cos^3{\theta}\sin{\theta}\right]\Big|_{-\frac{\pi}{2}}^{\frac{\pi}{2}}\cos^2{\theta} \\
+  &= \dfrac{4n}{\pi}\left[\dfrac{1}{4}\left(\dfrac{1}{2}\left(\dfrac{\pi}{2} - \dfrac{-\pi}{2} \right)\right] + \left[\dfrac{1}{4}\sin{2\dfrac{\pi}{2}}\right] - \left[\dfrac{1}{4}\sin{2\dfrac{-\pi}{2}}\right]\right) - \dfrac{1}{4}\left[\cos^3{\dfrac{\pi}{2}}\sin{\dfrac{\pi}{2}} - \cos^3{\dfrac{-\pi}{2}}\sin{\dfrac{-\pi}{2}}\right] \\
+  &= \dfrac{4n}{\pi}\left(\dfrac{\pi}{8} + 0\right) \\
+  &= \dfrac{n}{2}.
+    (\#eq:show1a4c)
+\end{align}
 
 
 #### Problem 1(b) {-}
