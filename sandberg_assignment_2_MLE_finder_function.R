@@ -3,7 +3,7 @@
 
 # Function to find the MLE given the starting theta, l', l'', and a tolerance
 
-find_MLE <- function(starting_theta,l_prime,l_double_prime,tolerance_epsilon){
+find_MLE <- function(starting_theta,l_prime,l_double_prime,tolerance_epsilon, maximum_iterations = 1000){
   
   # Keep count of iterations so the while loop does not take too long
   count_iterations <- 1
@@ -12,9 +12,9 @@ find_MLE <- function(starting_theta,l_prime,l_double_prime,tolerance_epsilon){
   # Begin with starting_theta
   theta_t_value <- starting_theta
   
-  while ((theta_difference >= tolerance_epsilon) & count_iterations < 1000){
-    
-    theta_t_next <- theta_t_value - (l_prime(theta_t_value) / l_double_prime(theta_t_value))
+  while ((theta_difference >= tolerance_epsilon) & count_iterations < maximum_iterations){
+
+        theta_t_next <- theta_t_value - (l_prime(theta_t_value) / l_double_prime(theta_t_value))
     theta_difference <- abs(theta_t_next - theta_t_value)
     theta_t_value <- theta_t_next
     count_iterations <- count_iterations + 1

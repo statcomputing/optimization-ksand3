@@ -79,11 +79,146 @@ Graph the log-likelihood  function. Find the MLE for $\theta$ using the Newton-R
 
 #### Solution 1(b) {-}
 
+The probability densiy function and log-likelihood  function are plotted below for the observed sample.  I built a function that finds the MLE for $\theta$ using the Newton-Raphson method.  The results are listed in the table below.  Most of the starting points converged to two maxima, one of which is the global maximum.  The sample mean was a good starting point because it did lead us to the MLE.
+
+(ref:q1b) The MLE for $\theta$ using the Newton-Raphson method.
+
+```{r q1b, echo = FALSE, eval = TRUE}
+source('sandberg_assignment_2_MLE_finder_function.R')
+x <- c(1.77, -0.23,  2.76, 3.80,  3.47, 56.75,  -1.34,  4.24, -2.44, 
+       3.29,  3.71, -2.40, 4.53, -0.07, -1.05, -13.87, -2.53, -1.75)
+
+starting_point <- c(-11, -1, 0, 1.5, 4, 4.7, 7, 8, 38, mean(x))
+tolerance_err <- 0.000001
+
+converges_to <- array()
+
+l_prime_theta_t <- function(theta_t){ 
+  -2 * sum((theta_t - x)/(1 + (theta_t - x)^2))
+}
+l_double_prime_theta_t <- function(theta_t){
+  -2 * sum((1 - (theta_t - x)^2)/(1 + (theta_t - x)^2)^2)
+}
+
+for (k in 1:length(starting_point)){
+  
+  theta_t<-starting_point[k]
+  
+  converges_to[k] <- find_MLE(theta_t, l_prime_theta_t, l_double_prime_theta_t,tolerance_err,maximum_iterations = 100)
+  
+}  
+
+# Create a table of the theta starting points and the values they converge to
+MLE_table <- cbind(starting_point,converges_to)
+colnames(MLE_table) <- c("Starting Point","Converges to")
+knitr::kable(MLE_table, digits = 4, booktabs = TRUE,
+             caption = '(ref:q1b)')
+
+# Plot the probability density of the Cauchy distribution where theta is the sample mean
+set_theta <- MLE_table[10,2]
+
+all_x <-seq(-50,50,0.25)
+prob_density <- array()
+
+for (m in 1:length(all_x)){
+  prob_density <- 1/(pi * (1 + (all_x - set_theta)^2))
+}
+
+pdf_title <- expression(paste("Probability Density of the Cauchy(", theta,",1) distribution"))
+plot(all_x,prob_density,type="l",main = pdf_title,xlab="x")
+
+# Plot the log-likelihood function
+n_value <- length(x)
+all_theta <-seq(-100,100,1)
+l_theta_t <- array()
+
+for (j in 1:length(all_theta)){
+  l_theta_t[j] <- -n_value * log(pi) - sum(log(1+(all_theta[j] - x)^2))
+}
+
+log_title <- expression(paste("log-likelihood function,", l(theta)))
+plot(all_theta,l_theta_t,type="l", main = log_title,xlab=expression(theta),ylab = expression(l(theta)))
+```
+
 
 #### Problem 1(c) {-}
 Apply fixed-point iterations using $G(x) = \alpha l'(\theta) + \theta$, with scaling choices of $\alpha \in \{1, 0.64, 0.25\}$ and initial value $-1$. Try the same starting points as above.
 
 #### Solution 1(c) {-}
+When we apply the fixed-point iteration method with $G(\theta) = \alpha l'(\theta) + \theta$, with scaling choices of $\alpha \in \{1, 0.64, 0.25\}$, we find the following results in Table 2. 
+
+(ref:q1c) The results of the fixed-point iterations using $G(x) = \alpha l'(\theta) + \theta$ where $\alpha \in \{1, 0.64, 0.25\}$.
+
+```{r q1c, echo = FALSE, eval=TRUE}
+# Kristen Sandberg
+# Assignment 2
+
+# Function to find the MLE given the starting theta, alpha, l', and a tolerance
+# using the fixed-point iteration method
+
+fixed_point_find_MLE <- function(starting_theta,alpha_value,l_prime,tolerance_epsilon){
+  
+  # Keep count of iterations so the while loop does not take too long
+  count_iterations <- 1
+  # Initialize the difference to be greater than the tolerance so the while loop works
+  theta_difference <- tolerance_epsilon + 2
+  # Begin with starting_theta
+  theta_t_value <- starting_theta
+  
+  while ((theta_difference >= tolerance_epsilon) & count_iterations < 1000){
+    
+    theta_t_next <- alpha_value * l_prime(theta_t_value) + theta_t_value
+    theta_difference <- abs(theta_t_next - theta_t_value)
+    theta_t_value <- theta_t_next
+    count_iterations <- count_iterations + 1
+  }
+  
+  theta_t_value
+  
+}
+
+x_q1 <- c(1.77, -0.23,  2.76, 3.80,  3.47, 56.75,  -1.34,  4.24, -2.44, 
+       3.29,  3.71, -2.40, 4.53, -0.07, -1.05, -13.87, -2.53, -1.75)
+
+starting_points <- c(-1, -11, 0, 1.5, 4, 4.7, 7, 8, 38)
+
+alpha_n <- c(1, 0.64, 0.25)
+
+l_prime_theta_t <- function(theta_t){ 
+  -2 * sum((theta_t - x_q1)/(1 + (theta_t - x_q1)^2))
+}
+
+n_i <-1
+
+starting_theta_q1c <- array()
+alpha_i <- array()
+converged_to_fp <- array()
+
+for (k in 1:length(starting_points)){
+  
+  for (j in 1:length(alpha_n)){
+  
+    starting_theta_q1c[n_i] <- starting_points[k]
+    alpha_i[n_i] <- alpha_n[j]
+    converged_to_fp[n_i] <- fixed_point_find_MLE(starting_points[k], alpha_n[j], l_prime_theta_t, 0.00000001)
+    n_i <- n_i + 1
+    }
+}  
+
+# Create a table of the theta starting points and the values they converge to
+MLE_fpi_table <- cbind(starting_theta_q1c,alpha_i,converged_to_fp)
+colnames(MLE_fpi_table) <- c("Starting Point","Alpha","Attracted to Theta")
+
+tab_len_1 <- floor(nrow(MLE_fpi_table) / 3)
+tab_len_2 <- floor(nrow(MLE_fpi_table) / 3) * 2
+table1 <- MLE_fpi_table[1:tab_len_1,]
+table2 <- MLE_fpi_table[(tab_len_1 + 1):tab_len_2,]
+table3 <- MLE_fpi_table[(tab_len_2+1):nrow(MLE_fpi_table),]
+knitr::kable(list(table1, table2,table3), digits = 4, booktabs = TRUE,
+             caption = '(ref:q1c)')
+# knitr::kable(MLE_fpi_table, booktabs = TRUE,
+             # caption = '(ref:q1c)')
+```
 
 
 #### Problem 1(d) {-}
@@ -91,7 +226,97 @@ First use Fisher scoring to find the MLE for $\theta$, then refine the estimate 
 
 #### Solution 1(d) {-}
 
+We found that the starting points converged to two maxima, one of which was the global maximum, or MLE.
 
+(ref:q1d) The results of using Fisher scoring to find the MLE from different starting points are shown in the table.
+
+(ref:q1d2) The result of using the Newton-Raphson method to refine our results from the Fisher scoring method is shown in the table.
+
+```{r q1d, echo = FALSE, eval=TRUE}
+# Question 1d
+
+x_q1d <- c(1.77, -0.23,  2.76, 3.80,  3.47, 56.75,  -1.34,  4.24, -2.44, 
+       3.29,  3.71, -2.40, 4.53, -0.07, -1.05, -13.87, -2.53, -1.75)
+
+starting_point <- c(-11, -1, 0, 1.5, 4, 4.7, 7, 8, 38, mean(x_q1d))
+
+# Based on Solution to Question 1 part a
+fisher_information <- length(x_q1d)/2
+
+converges_to <- array()
+
+for (k in 1:length(starting_point)){
+  
+  theta_t<-starting_point[k]
+  
+  for (i in 1:1000){
+    
+    l_prime_theta_t <- -2 * sum((theta_t - x_q1d)/(1 + (theta_t - x_q1d)^2))
+    new_theta_t <- theta_t + (l_prime_theta_t / fisher_information)
+    
+    theta_t <- new_theta_t
+  }
+  
+  converges_to[k] <- theta_t
+  
+}  
+
+# Create a table of the theta starting points and the values they converge to
+q1d_MLE_table <- cbind(starting_point,converges_to)
+colnames(q1d_MLE_table) <- c("Starting Point","Converges to")
+
+knitr::kable(q1d_MLE_table, digits = 5, booktabs = TRUE,
+             caption = '(ref:q1d)')
+
+# Find the mode of the points that the iterations converge to
+calculate_mode <- function(vector_input) {
+  uniqv_element <- unique(vector_input)
+  uniqv_element[which.max(tabulate(match(vector_input, uniqv_element)))]
+}
+mode_is <- calculate_mode(q1d_MLE_table[,2])
+l_of_mode_is <- -n_value * log(pi) - sum(log(1+(mode_is - x_q1d)^2))
+
+# Plot the log-likelihood function
+n_value <- length(x_q1d)
+all_theta <-seq(-1,6,0.00025)
+l_theta_t <- array()
+
+for (j in 1:length(all_theta)){
+  l_theta_t[j] <- -n_value * log(pi) - sum(log(1+(all_theta[j] - x_q1d)^2))
+}
+
+log2_title <- paste("log-likelihood function, at",round(mode_is,5))
+plot(all_theta,l_theta_t,type="l", main = log2_title,xlab=expression(theta),ylab = expression(l(theta)))
+
+# Refine using the Newton-Raphson method
+tolerance_error <- 0.000001
+
+l_prime_theta_t_newton <- function(theta_t){ 
+  -2 * sum((theta_t - x_q1d)/(1 + (theta_t - x_q1d)^2))
+}
+l_double_prime_theta_t_newton <- function(theta_t){
+  -2 * sum((1 - (theta_t - x_q1d)^2)/(1 + (theta_t - x_q1d)^2)^2)
+}
+
+
+converges_to_newton <- find_MLE(mode_is, l_prime_theta_t_newton, l_double_prime_theta_t_newton,tolerance_error)#,maximum_iterations = 100)
+converges_to_newton <- formatC(converges_to_newton,digits=20)
+mode_is <- formatC(mode_is,digits=20)
+  
+
+# Create a table of the theta starting points and the values they converge to
+MLE_table_fisher_newton <- cbind(mode_is,converges_to_newton)
+colnames(MLE_table_fisher_newton) <- c("Starting Point from Fisher Scoring","Converges to using Newton-Raphson")
+knitr::kable(MLE_table_fisher_newton, booktabs = TRUE,
+             caption = '(ref:q1d2)')
+```
+
+Using Fisher scoring, we found the MLE to be $\theta =$ `r mode_is`.  Once we refined this estimate using the Newton-Raphson method, we found the MLE to be $\theta =$ `r converges_to_newton`. 
+
+#### Problem 1(e) {-}
+Comment on the results from different methods (speed, stability, etc.).
+
+#### Solution 1(e) {-}
 
 
 ### Problem 2 {-}
@@ -248,8 +473,6 @@ attractors <- unique(round(attraction_outcome,8))
 
 sets_of_attractors <- cbind(theta_200,attraction_outcome,round(attraction_outcome,8))
 
-# print(attractors)
-
 lowest_theta  <- array()
 highest_theta <- array()
 
@@ -264,8 +487,17 @@ for (m in 1:length(attractors)){
 min_max_attract <- cbind(attractors,lowest_theta,highest_theta)
 colnames(min_max_attract) <- c("Attracted to Theta", "Lowest Theta in Set", "Highest Theta in Set")
 
-knitr::kable(min_max_attract, booktabs = TRUE,
+
+# q2_tab_len_1 <- floor(nrow(min_max_attract) / 3)
+# q2_tab_len_2 <- floor(nrow(min_max_attract) / 3) * 2
+# q2_table1 <- min_max_attract[1:q2_tab_len_1,]
+# q2_table2 <- min_max_attract[(q2_tab_len_1 + 1):q2_tab_len_2,]
+# q2_table3 <- min_max_attract[(q2_tab_len_2+1):nrow(min_max_attract),]
+# knitr::kable(list(q2_table1, q2_table2, q2_table3), digits = 4, booktabs = TRUE,
+#              caption = '(ref:Attracts)')
+knitr::kable(min_max_attract, digits = 4, booktabs = TRUE,
              caption = '(ref:Attracts)')
+
 ```
 
 ### Problem 3 {-}
@@ -309,7 +541,7 @@ In many population modeling application, an assumption of lognormality is adopte
 
 ### Acknowledgment {-}
 
-I would like to thank Surya Eada for his collaboration on this assignment prior to when the groups were split up. 
+I would like to thank Surya Eada for his collaboration on problem 1a of this assignment prior to when the groups were split up. 
 
 
 ### Reference {-}
