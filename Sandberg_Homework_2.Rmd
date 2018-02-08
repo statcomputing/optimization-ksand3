@@ -14,8 +14,8 @@ keywords: Template, R Markdown, bookdown, Data Lab
 # keywords set in YAML header here only go to the properties of the PDF output
 # the keywords that appear in PDF output are set in latex/before_body.tex
 output:
-  #bookdown::pdf_document2
-  bookdown::html_document2
+   bookdown::pdf_document2
+  # bookdown::html_document2
 #abstract: |
 #    This homework assignment is based on Chapter 2: Optimization and Solving Nonlinear Equations.
 ---
@@ -141,7 +141,8 @@ I(\theta) &= \dfrac{4n}{\pi} \int_{-\infty}^{\infty} \dfrac{u^2 du}{(1 + u^2)^3}
 #### Problem 1(b) {-}
 Suppose that the observed sample is 
 ```{r define_x, echo = TRUE, eval=TRUE}
-x_q1 <- c(1.77, -0.23, 2.76, 3.80, 3.47, 56.75, -1.34, 4.24, -2.44, 3.29, 3.71, -2.40, 4.53, -0.07, -1.05, -13.87, -2.53, -1.75)
+x_q1 <- c(1.77, -0.23, 2.76, 3.80, 3.47, 56.75, -1.34, 4.24, -2.44, 3.29, 3.71,
+          -2.40, 4.53, -0.07, -1.05, -13.87, -2.53, -1.75)
 ```
 Graph the log-likelihood  function. Find the MLE for $\theta$ using the Newton-Raphson method. Try all the following starting points: $-11, -1, 0, 1.5, 4, 4.7, 7, 8,$ and $38$.  Compare your results. Is the sample mean a good starting point?
 
@@ -307,6 +308,7 @@ x_q1d <- c(1.77, -0.23,  2.76, 3.80,  3.47, 56.75,  -1.34,  4.24, -2.44,
        3.29,  3.71, -2.40, 4.53, -0.07, -1.05, -13.87, -2.53, -1.75)
 
 starting_point <- c(-11, -1, 0, 1.5, 4, 4.7, 7, 8, 38, mean(x_q1d))
+tolerance_err <- 0.000001
 
 # Based on Solution to Question 1 part a
 fisher_information <- length(x_q1d)/2
@@ -317,14 +319,21 @@ for (k in 1:length(starting_point)){
   
   theta_t<-starting_point[k]
   
-  for (i in 1:1000){
+  theta_difference <- tolerance_err + 2
+  counter <- 1
+  
+  # for (i in 1:1000){
+  while ((theta_difference >= tolerance_err) & (counter < 10000)){
     
     l_prime_theta_t <- -2 * sum((theta_t - x_q1d)/(1 + (theta_t - x_q1d)^2))
+    
     new_theta_t <- theta_t + (l_prime_theta_t / fisher_information)
+    theta_difference <- abs(new_theta_t - theta_t)
     
     theta_t <- new_theta_t
+    counter <- counter + 1
+    
   }
-  
   converges_to[k] <- theta_t
   
 }  
@@ -385,7 +394,7 @@ Using Fisher scoring, we found the MLE to be $\theta =$ `r mode_is`.  Once we re
 Comment on the results from different methods (speed, stability, etc.).
 
 #### Solution 1(e) {-}
-
+For the Newton-Raphson method in part 1b, some of the starting points diverged, so the iterations had to be cut off to prevent the code from running too long or not working, but that was only true for $\theta \in \{-11,7,8,38\}$.  The other starting points took five or six iterations.  In part 1c, the fixed-point iteration method was slower than the Newton-Raphson method.  The speed of the fixed-point method depended on both the starting point and the value of $\alpha$.  Convergence was faster when $\alpha = 0.25$, which is not a surprise because it was the smallest of the scaling choices.  Finally, when I used the Fisher scoring method, each of the stating points took between 1000 and 1500 iterations, however, that may be due to the tolerance I have set.  The positive aspect of the Fisher scoring method is all of the starting points converged to just two maxima, one of which is the MLE while the other is a local maxima.
 
 ### Problem 2 {-}
 
@@ -579,12 +588,13 @@ beetles <- data.frame(
 A simple model for population growth is the logistic model given by
 \begin{align}
     \dfrac{\text{d}N}{\text{d}t} &= rN\left(1-\dfrac{N}{K}\right),
-    (\#eq:q3_1)
+    (\#eq:q31)
 \end{align}
 where $N$ is the population size, $t$ is time, $r$ is an unknown growth rate parameter, and $K$ is an unknown parameter that represents the population carrying capacity of the environment.  The solution to the differential equation is given by
+
 \begin{align}
     N_t &= f(t) = \dfrac{KN_0}{N_0 + (K-N_0)\exp{(-rt)}}, 
-    (\#eq:q3_2)
+    (\#eq:q32)
 \end{align}
 where $N_t$ denotes the population size at time $t$.  
 
@@ -593,19 +603,249 @@ Fit the population growth model to the beetles data using the Gauss-Newton appro
 
 #### Solution 3(a) {-}
 
+The following figure is the result of fitting the population growth model to the beetles data using the Gauss-Newton approach.
+
+```{r q3a, echo = FALSE, eval=TRUE}
+# Assignment 2
+# Question 3
+
+library(MASS)
+
+beetles <- data.frame(
+  days = c(0, 8, 28, 41, 63, 69, 97, 117, 135, 154),
+  beetles = c(2, 47, 192, 256, 768, 896, 1120, 896, 1184, 1024))
+
+N_0 <- beetles[1,2] # Initial Population
+
+initial_theta_kr <- c(900,0.1) # Initial K = 800 and r = 0.1
+
+time_t <- beetles[,1]
+
+observed_beetles <- beetles[,2]
+
+beetle_f <- function(time_t,K,r){
+  
+  f_t <- (K * N_0) / (N_0 + (K - N_0)*exp(-r*time_t))
+  return(f_t)
+  
+}
+
+beetle_f_prime <- function(t,K,r,n_obs){
+  
+  dF_dK <- (((N_0^2)*(1 - exp(-r*t)))/((N_0 + (K-N_0)*exp(-r*t))^2))
+  dF_dr <- (t*K*N_0*(K-N_0)*exp(-r*t))/((N_0 + (K-N_0)*exp(-r*t))^2)
+  
+  f_prime <- matrix(c(dF_dK,dF_dr), nrow = n_obs, ncol = 2, byrow = FALSE)
+  
+  return (f_prime)
+}
+
+
+find_MLE_gauss_newton <- function(beetle_f_t, d_beetle_f_t, beetle_pop, 
+                                  theta_kr_start, tol_epsilon = 0.000001,
+                                  max_iterations = 1000){
+  counter_iterations <- 0
+  
+  # Initial theta_diff to be greater than epsilon
+  theta_diff <- tol_epsilon + 2
+  
+  t_time <- 1
+  n <- length(beetle_pop)
+  theta_kr <- theta_kr_start
+  
+  K_start <- theta_kr[1]
+  r_start <- theta_kr[2]
+  
+  f_i <- beetle_f_t(time_t, K_start, r_start)
+  a_matrix <- d_beetle_f_t(time_t, K_start, r_start,n_obs = n)
+  
+  z_t <- beetle_pop -f_i
+  
+  while ((theta_diff >= tol_epsilon) & counter_iterations < max_iterations){
+    
+    next_theta_kr <- theta_kr + ginv(t(a_matrix) %*% a_matrix)%*% t(a_matrix) %*%z_t
+    theta_difference <- abs(next_theta_kr - theta_kr)
+    theta_kr <- next_theta_kr
+    K_next <- theta_kr[1]
+    r_next <- theta_kr[2]
+    f_i <- beetle_f_t(time_t, K_next, r_next)
+    z_t <- beetle_pop -f_i
+    a_matrix <- d_beetle_f_t(time_t, K_next, r_next, n_obs = n)
+    counter_iterations <- counter_iterations + 1
+    t_time <- t_time + 1
+  }
+  return(theta_kr)
+}
+
+MLE_theta_table <- find_MLE_gauss_newton(beetle_f, beetle_f_prime, observed_beetles, 
+                                  initial_theta_kr, tol_epsilon = 0.000001,
+                                  max_iterations = 1000)
+# colnames(MLE_theta_table) <- c("K", "r")
+# print(MLE_theta_table)
+
+# Question 3 Part a plot
+plot(time_t,observed_beetles,xlab="Days",ylab="Beetle Population")
+plot_f_theta <-function(times) {
+  beetle_f(times, MLE_theta_table[1], MLE_theta_table[2])
+}
+curve(plot_f_theta,add=TRUE)
+
+```
+
+To use the Gauss-Newton approach, we need to compute the following partial derivatives:
+\begin{align}
+    \dfrac{\partial f(t)}{\partial K} &= \dfrac{\left[N_0 + (K-N_0)\exp{(-rt)}\right](N_0) - \left[KN_0\right]\left[\exp{(-rt)}\right]}{\left[N_0 + (K-N_0)\exp{(-rt)}\right]^2} \\
+    &= \dfrac{N_0^2 + KN_0\exp{(-rt)} - N_0^2\exp{(-rt)} - KN_0\exp{(-rt)}}{\left[N_0 + (K-N_0)\exp{(-rt)}\right]^2} \\
+    &= \dfrac{N_0^2\left(1-\exp{(-rt)}\right)}{\left[N_0 + (K-N_0)\exp{(-rt)}\right]^2} 
+    (\#eq:q3partials)
+\end{align}
+and 
+\begin{align}
+    \dfrac{\partial f(t)}{\partial r} &= \dfrac{\left[N_0 + (K-N_0)\exp{(-rt)}\right](0) - \left[KN_0\right]\left[-t(K-N_0)\exp{(-rt)}\right]}{\left[N_0 + (K-N_0)\exp{(-rt)}\right]^2} \\
+    &= \dfrac{tKN_0(K-N_0)\exp{(-rt)}}{\left[N_0 + (K-N_0)\exp{(-rt)}\right]^2} 
+    (\#eq:q3partials2)
+\end{align}
 
 #### Problem 3(b) {-}
 Show the contour plot of the sum of squared errors.
 
 #### Solution 3(b) {-}
 
+The following figure is the contour plot of the sum of squared errors that resulted from using the Gauss-Newton approach.  The MLE appears to be near $K=1100$ and $r=0.11$.
+
+```{r q3b, echo = FALSE, eval=TRUE}
+# Create contour plot of the sum of squared errors
+
+k_contours <- seq(750,1200,by = 10)
+r_contours <- seq(0.09,0.2, by = 0.07)
+
+contour_point <- matrix(,nrow=length(k_contours),ncol=length(r_contours))
+
+for (i in 1:length(k_contours)){
+  
+  for (j in 1:length(r_contours)){
+    
+    f_theta <- beetle_f(time_t, k_contours[i], r_contours[j])
+    
+    sse <- -1 * sum(observed_beetles - f_theta)^2
+    
+    contour_point[i,j] <- sse
+    
+  }
+  
+}
+
+plot(x=0,y=0,xlim=range(k_contours),ylim=range(r_contours),xlab="K",ylab="r",main="Contour Plot")
+contour(k_contours,r_contours,contour_point,lty="solid",add=TRUE,nlevels=15)
+```
 
 #### Problem 3(c) {-}
 In many population modeling application, an assumption of lognormality is adopted. That is , we assume that $\log{N_t}$ are independent and normally distributed with mean $\log{f(t)}$ and variance $\sigma^2$. Find the maximum likelihood estimators of $r$, $K$, $\sigma^2$ using any suitable method of your choice. Estimate the variance your parameter estimates.
 
 #### Solution 3(c) {-}
+I compute the maximum likelihood estimators for $K$ and $r$ using the Gauss-Newton approach.  
+
+(ref:gaussnewton) The maximum likelihood estimators for $K$ and $r$ are shown in the following table.
+
+```{r q3c, echo = FALSE, eval=TRUE}
+library(MASS)
+
+beetles <- data.frame(
+  days = c(0, 8, 28, 41, 63, 69, 97, 117, 135, 154),
+  beetles = c(2, 47, 192, 256, 768, 896, 1120, 896, 1184, 1024))
+
+N_0 <- beetles[1,2] # Initial Population
+
+initial_theta_kr <- c(900,0.1) # Initial K = 800 and r = 0.1
+
+time_t <- beetles[,1]
+
+observed_beetles <- beetles[,2]
+
+beetle_f <- function(time_t,K,r){
+  
+  f_t <- (K * N_0) / (N_0 + (K - N_0)*exp(-r*time_t))
+  return(f_t)
+  
+}
+
+beetle_f_prime <- function(t,K,r,n_obs){
+  
+  dF_dK <- (((N_0^2)*(1 - exp(-r*t)))/((N_0 + (K-N_0)*exp(-r*t))^2))
+  dF_dr <- (t*K*N_0*(K-N_0)*exp(-r*t))/((N_0 + (K-N_0)*exp(-r*t))^2)
+  
+  f_prime <- matrix(c(dF_dK,dF_dr), nrow = n_obs, ncol = 2, byrow = FALSE)
+  
+  return (f_prime)
+}
 
 
+find_MLE_gauss_newton <- function(beetle_f_t, d_beetle_f_t, beetle_pop, 
+                                  theta_kr_start, tol_epsilon = 0.000001,
+                                  max_iterations = 1000){
+  counter_iterations <- 0
+  
+  # Initial theta_diff to be greater than epsilon
+  theta_diff <- tol_epsilon + 2
+  
+  t_time <- 1
+  n <- length(beetle_pop)
+  theta_kr <- theta_kr_start
+  
+  K_start <- theta_kr[1]
+  r_start <- theta_kr[2]
+  
+  f_i <- beetle_f_t(time_t, K_start, r_start)
+  a_matrix <- d_beetle_f_t(time_t, K_start, r_start,n_obs = n)
+  
+  z_t <- beetle_pop -f_i
+  
+  while ((theta_diff >= tol_epsilon) & counter_iterations < max_iterations){
+    
+    next_theta_kr <- theta_kr + ginv(t(a_matrix) %*% a_matrix)%*% t(a_matrix) %*%z_t
+    theta_difference <- abs(next_theta_kr - theta_kr)
+    theta_kr <- next_theta_kr
+    K_next <- theta_kr[1]
+    r_next <- theta_kr[2]
+    f_i <- beetle_f_t(time_t, K_next, r_next)
+    z_t <- beetle_pop -f_i
+    a_matrix <- d_beetle_f_t(time_t, K_next, r_next, n_obs = n)
+    counter_iterations <- counter_iterations + 1
+    t_time <- t_time + 1
+  }
+  return(theta_kr)
+}
+
+MLE_theta_tab <- find_MLE_gauss_newton(beetle_f, beetle_f_prime, observed_beetles, 
+                                  initial_theta_kr, tol_epsilon = 0.000001,
+                                  max_iterations = 1000)
+MLE_theta_table <- cbind(t(MLE_theta_tab))
+colnames(MLE_theta_table) <- c("K", "r")
+# print(MLE_theta_table)
+# Question 3 part c
+
+N_t <- beetle_f(beetles[,1],MLE_theta_table[1],MLE_theta_table[2])
+
+# density_f_t <- function(sigma_t,fn = N_t){ 
+#   (1/(fn*sqrt(2*pi*sigma_t^2)))#*exp(((-1)/2)*((log)))
+# }
+
+starter_sigma <- 234001.0
+
+# converged_to_sigma <- fixed_point_find_MLE(starter_sigma, 0.2, density_f_t, 0.00000001)
+# print(converged_to_sigma)
+
+variance_N <- var(N_t)
+variance_N <- formatC(variance_N,digits=10)
+
+knitr::kable(MLE_theta_table, digits = 5, booktabs = TRUE,
+             caption = '(ref:gaussnewton)')
+
+K_value <- MLE_theta_tab[1]
+r_value <- MLE_theta_tab[2]
+```             
+
+I found the MLEs for $K=$ `r K_value` and $r=$ `r r_value`.  The variance is $\sigma^2 =$ `r variance_N`.  See solution 3a for the details of the Gauss-Newton approach.
 
 ### Acknowledgment {-}
 
